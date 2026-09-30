@@ -748,26 +748,41 @@ func writeAnthropicToolChoice(jw *jsonWriter, body []byte, autoOnly bool) {
 	if autoOnly && (kind == toolChoiceRequired || kind == toolChoiceNamed) {
 		kind = toolChoiceAuto
 	}
+	// Anthropic carries the parallel limit on tool_choice, so a bare
+	// parallel_tool_calls:false still needs an explicit auto choice to ride on.
+	parallel := gjson.GetBytes(body, "parallel_tool_calls")
+	disableParallel := isJSONBool(parallel) && !parallel.Bool() && hasNonEmptyTools(body)
+	if disableParallel && kind == toolChoiceAbsent {
+		kind = toolChoiceAuto
+	}
+	var choiceType string
 	switch kind {
 	case toolChoiceAuto:
-		jw.Key("tool_choice")
-		jw.Raw(`{"type":"auto"}`)
+		choiceType = "auto"
 	case toolChoiceRequired:
-		jw.Key("tool_choice")
-		jw.Raw(`{"type":"any"}`)
-	case toolChoiceNone:
-		// Handled upstream — tools and tool_choice both suppressed.
+		choiceType = "any"
 	case toolChoiceNamed:
-		tw := newJSONWriter()
-		tw.Obj()
-		tw.Key("type")
-		tw.Str("tool")
+		choiceType = "tool"
+	default:
+		// none is handled upstream (tools and tool_choice both suppressed);
+		// absent and unrecognized write nothing.
+		return
+	}
+	tw := newJSONWriter()
+	tw.Obj()
+	tw.Key("type")
+	tw.Str(choiceType)
+	if kind == toolChoiceNamed {
 		tw.Key("name")
 		tw.Str(name)
-		tw.EndObj()
-		jw.Key("tool_choice")
-		jw.Raw(string(tw.Bytes()))
 	}
+	if disableParallel {
+		tw.Key("disable_parallel_tool_use")
+		tw.Bool(true)
+	}
+	tw.EndObj()
+	jw.Key("tool_choice")
+	jw.Raw(string(tw.Bytes()))
 }
 
 func writeAnthropicSamplingParams(jw *jsonWriter, body []byte, capabilities router.ModelSpec) {
