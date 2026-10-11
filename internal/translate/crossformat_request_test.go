@@ -2435,9 +2435,22 @@ func TestCrossFormat_OpenAIToAnthropic_ParallelToolCalls(t *testing.T) {
 
 			var doc map[string]any
 			require.NoError(t, json.Unmarshal(prep.Body, &doc))
+			if tc.want == nil {
+				assert.NotContains(t, doc, "tool_choice")
+				return
+			}
 			assert.Equal(t, tc.want, doc["tool_choice"])
 		})
 	}
+
+	t.Run("only non-function tools", func(t *testing.T) {
+		body := []byte(`{"model":"gpt-6.1-sol","messages":[{"role":"user","content":"hi"}],"tools":[{"type":"web_search_preview"}],"parallel_tool_calls":false}`)
+		env, err := translate.ParseOpenAI(body)
+		require.NoError(t, err)
+		prep, err := env.PrepareAnthropic(http.Header{}, translate.EmitOptions{TargetModel: "claude-sonnet-5", Capabilities: router.Lookup("claude-sonnet-5")})
+		require.NoError(t, err)
+		assert.False(t, gjson.GetBytes(prep.Body, "tool_choice").Exists(), "no function tool reaches Anthropic, so tool_choice would be rejected")
+	})
 
 	t.Run("no tools", func(t *testing.T) {
 		body := []byte(`{"model":"gpt-6.1-sol","messages":[{"role":"user","content":"hi"}],"tools":[],"parallel_tool_calls":false}`)

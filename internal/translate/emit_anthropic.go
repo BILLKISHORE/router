@@ -743,6 +743,17 @@ func writeAnthropicTools(jw *jsonWriter, body []byte) {
 	jw.EndArr()
 }
 
+// hasAnthropicFunctionTools reports whether writeAnthropicTools emits at least
+// one tool; entries without a function member are skipped there.
+func hasAnthropicFunctionTools(body []byte) bool {
+	found := false
+	gjson.GetBytes(body, "tools").ForEach(func(_, tool gjson.Result) bool {
+		found = tool.Get("function").Exists()
+		return !found
+	})
+	return found
+}
+
 func writeAnthropicToolChoice(jw *jsonWriter, body []byte, autoOnly bool) {
 	kind, name := openAIToolChoice(body)
 	if autoOnly && (kind == toolChoiceRequired || kind == toolChoiceNamed) {
@@ -751,7 +762,7 @@ func writeAnthropicToolChoice(jw *jsonWriter, body []byte, autoOnly bool) {
 	// Anthropic carries the parallel limit on tool_choice, so a bare
 	// parallel_tool_calls:false still needs an explicit auto choice to ride on.
 	parallel := gjson.GetBytes(body, "parallel_tool_calls")
-	disableParallel := isJSONBool(parallel) && !parallel.Bool() && hasNonEmptyTools(body)
+	disableParallel := isJSONBool(parallel) && !parallel.Bool() && hasAnthropicFunctionTools(body)
 	if disableParallel && kind == toolChoiceAbsent {
 		kind = toolChoiceAuto
 	}
