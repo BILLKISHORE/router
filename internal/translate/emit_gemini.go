@@ -544,6 +544,10 @@ func writeGeminiToolsFromOpenAI(jw *jsonWriter, body []byte) error {
 // "auto") on Gemini 3.x gets mode=VALIDATED for schema-constrained decoding;
 // explicit none/required/function choices pass through untouched.
 func writeGeminiToolChoiceFromOpenAI(jw *jsonWriter, body []byte, model string, downgradeValidated bool) {
+	if names, ok := openAIRequiredAllowedTools(body); ok {
+		writeGeminiFunctionCallingMode(jw, "ANY", names...)
+		return
+	}
 	kind, name := openAIToolChoice(body)
 	writeGeminiToolChoice(jw, body, model, downgradeValidated, kind, name)
 }
