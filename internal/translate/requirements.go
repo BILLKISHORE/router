@@ -27,7 +27,8 @@ func (e *RequestEnvelope) TranslationRequirements(endpoint router.TranslationEnd
 		req.StructuredOutput = gjson.GetBytes(e.body, "output_config.format").Exists()
 		req.Audio, req.Files = anthropicMediaRequirements(e.body)
 		req.CitationsOrSearch = len(e.NativeServerTools()) > 0
-		req.ParallelToolLimit = hasNonEmptyTools(e.body) && gjson.GetBytes(e.body, "tool_choice.disable_parallel_tool_use").Bool()
+		disabled := gjson.GetBytes(e.body, "tool_choice.disable_parallel_tool_use")
+		req.ParallelToolLimit = hasNonEmptyTools(e.body) && isJSONBool(disabled) && disabled.Bool()
 	case FormatOpenAI:
 		req.SourceFormat = router.WireFormatOpenAI
 		req.ReasoningReplay = hasContentType(e.body, "reasoning") || gjson.GetBytes(e.body, "reasoning").Exists()

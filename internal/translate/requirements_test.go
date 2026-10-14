@@ -130,6 +130,7 @@ func TestTranslationRequirements_DetectsParallelToolLimit(t *testing.T) {
 		{"openai limit without tools", FormatOpenAI, `{"messages":[{"role":"user","content":"hi"}],"parallel_tool_calls":false}`, false},
 		{"anthropic limit", FormatAnthropic, `{"messages":[{"role":"user","content":"hi"}],"tools":[` + anthropicTool + `],"tool_choice":{"type":"auto","disable_parallel_tool_use":true}}`, true},
 		{"anthropic parallel allowed", FormatAnthropic, `{"messages":[{"role":"user","content":"hi"}],"tools":[` + anthropicTool + `],"tool_choice":{"type":"auto","disable_parallel_tool_use":false}}`, false},
+		{"anthropic non-boolean limit", FormatAnthropic, `{"messages":[{"role":"user","content":"hi"}],"tools":[` + anthropicTool + `],"tool_choice":{"type":"auto","disable_parallel_tool_use":"true"}}`, false},
 		{"anthropic limit without tools", FormatAnthropic, `{"messages":[{"role":"user","content":"hi"}],"tool_choice":{"type":"auto","disable_parallel_tool_use":true}}`, false},
 	}
 	for _, tc := range cases {
