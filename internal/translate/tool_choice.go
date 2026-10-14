@@ -91,8 +91,9 @@ func openAIRequiredAllowedTools(body []byte) (names []string, ok bool) {
 	if r.Get("type").String() != "allowed_tools" || r.Get("allowed_tools.mode").String() != "required" {
 		return nil, false
 	}
-	tools := r.Get("allowed_tools.tools").Array()
-	if len(tools) == 0 {
+	subset := r.Get("allowed_tools.tools")
+	tools := subset.Array()
+	if !subset.IsArray() || len(tools) == 0 {
 		return nil, false
 	}
 	names = make([]string, 0, len(tools))
