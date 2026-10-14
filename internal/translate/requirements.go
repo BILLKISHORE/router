@@ -27,6 +27,7 @@ func (e *RequestEnvelope) TranslationRequirements(endpoint router.TranslationEnd
 		req.StructuredOutput = gjson.GetBytes(e.body, "output_config.format").Exists()
 		req.Audio, req.Files = anthropicMediaRequirements(e.body)
 		req.CitationsOrSearch = len(e.NativeServerTools()) > 0
+		req.ParallelToolLimit = hasNonEmptyTools(e.body) && gjson.GetBytes(e.body, "tool_choice.disable_parallel_tool_use").Bool()
 	case FormatOpenAI:
 		req.SourceFormat = router.WireFormatOpenAI
 		req.ReasoningReplay = hasContentType(e.body, "reasoning") || gjson.GetBytes(e.body, "reasoning").Exists()
@@ -34,6 +35,8 @@ func (e *RequestEnvelope) TranslationRequirements(endpoint router.TranslationEnd
 		req.UsageDetail = gjson.GetBytes(e.body, "stream_options.include_usage").Bool()
 		req.Audio, req.Files = openAIMediaRequirements(e.body)
 		req.CitationsOrSearch = len(e.NativeServerTools()) > 0
+		parallel := gjson.GetBytes(e.body, "parallel_tool_calls")
+		req.ParallelToolLimit = hasNonEmptyTools(e.body) && isJSONBool(parallel) && !parallel.Bool()
 	case FormatGemini:
 		req.SourceFormat = router.WireFormatGemini
 		req.ReasoningSignature = containsKey(e.body, "thoughtSignature") || containsKey(e.body, "thought_signature")
