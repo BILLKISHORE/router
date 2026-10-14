@@ -28,11 +28,12 @@ custom, namespace, built-in, and unknown Responses unions instead of reducing
 them to function tools. Gemini ingress selects the native Gemini family before
 routing; it no longer reaches the late unsupported-cross-format path.
 
-A parallel tool-call limit (`parallel_tool_calls: false`, or
-`tool_choice.disable_parallel_tool_use: true`, on a request that declares
-tools) survives translation to the Anthropic and OpenAI-compatible families.
-Gemini has no equivalent, so this requirement excludes only the Gemini family,
-under code `parallel_tool_limit_unsupported`.
+A parallel tool-call limit (`parallel_tool_calls: false` on OpenAI Chat
+ingress, or `tool_choice.disable_parallel_tool_use: true` on Anthropic
+Messages ingress, on a request that declares tools) survives translation to
+the Anthropic and OpenAI-compatible families. Gemini has no equivalent, so this
+requirement excludes only the Gemini family, under code
+`parallel_tool_limit_unsupported`. Responses ingress does not set it yet.
 
 ## Observability
 
