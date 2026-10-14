@@ -1048,36 +1048,37 @@ func writeGeminiToolChoiceFromAnthropic(jw *jsonWriter, body []byte, model strin
 // none/required/named choices map straight to a functionCallingConfig mode.
 func writeGeminiToolChoice(jw *jsonWriter, body []byte, model string, downgradeValidated bool, kind toolChoiceKind, name string) {
 	if (kind == toolChoiceAbsent || kind == toolChoiceAuto) && hasNonEmptyTools(body) && isGemini3xModel(model) {
-		writeGeminiFunctionCallingMode(jw, geminiToolMode(downgradeValidated), "")
+		writeGeminiFunctionCallingMode(jw, geminiToolMode(downgradeValidated))
 		return
 	}
 	switch kind {
 	case toolChoiceAuto:
-		writeGeminiFunctionCallingMode(jw, "AUTO", "")
+		writeGeminiFunctionCallingMode(jw, "AUTO")
 	case toolChoiceRequired:
-		writeGeminiFunctionCallingMode(jw, "ANY", "")
+		writeGeminiFunctionCallingMode(jw, "ANY")
 	case toolChoiceNone:
-		writeGeminiFunctionCallingMode(jw, "NONE", "")
+		writeGeminiFunctionCallingMode(jw, "NONE")
 	case toolChoiceNamed:
 		writeGeminiFunctionCallingMode(jw, "ANY", name)
 	}
 }
 
 // writeGeminiFunctionCallingMode writes a toolConfig.functionCallingConfig
-// object with the given mode, optionally pinning a single allowed function
-// name (used for the named-tool choice, which Gemini expresses as ANY mode
-// plus an allowedFunctionNames allowlist of one).
-func writeGeminiFunctionCallingMode(jw *jsonWriter, mode, name string) {
+// object with the given mode, optionally limiting calls to the given function
+// names (a named-tool choice is ANY mode plus an allowlist of one).
+func writeGeminiFunctionCallingMode(jw *jsonWriter, mode string, names ...string) {
 	jw.Key("toolConfig")
 	jw.Obj()
 	jw.Key("functionCallingConfig")
 	jw.Obj()
 	jw.Key("mode")
 	jw.Str(mode)
-	if name != "" {
+	if len(names) > 0 {
 		jw.Key("allowedFunctionNames")
 		jw.Arr()
-		jw.Str(name)
+		for _, name := range names {
+			jw.Str(name)
+		}
 		jw.EndArr()
 	}
 	jw.EndObj()
