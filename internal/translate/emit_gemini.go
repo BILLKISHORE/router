@@ -542,7 +542,8 @@ func writeGeminiToolsFromOpenAI(jw *jsonWriter, body []byte) error {
 // writeGeminiToolChoiceFromOpenAI writes toolConfig into jw from an OpenAI body.
 // Mirrors writeGeminiToolChoiceFromAnthropic: unforced tool_choice (absent or
 // "auto") on Gemini 3.x gets mode=VALIDATED for schema-constrained decoding;
-// explicit none/required/function choices pass through untouched.
+// explicit none/required/function choices pass through untouched, and a
+// required allowed_tools subset becomes ANY plus its allowedFunctionNames.
 func writeGeminiToolChoiceFromOpenAI(jw *jsonWriter, body []byte, model string, downgradeValidated bool) {
 	if names, ok := openAIRequiredAllowedTools(body); ok {
 		writeGeminiFunctionCallingMode(jw, "ANY", names...)
